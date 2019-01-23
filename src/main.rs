@@ -27,21 +27,22 @@ struct Data {
 }
 
 impl Data {
-    fn new(args: Args) -> Data {
-        let root_path = env::args()
+    fn new(args: Args) -> Result<Data, String> {
+        if let Some(root_path) = env::args()
             .skip(1)
             .find(|string| {
                 !string.starts_with("--b")
-            })
-            .expect("Please provide target path");
+            }) {
+            return Err(String::from("No root path provided"));
+        }
 
         let mut ignores = Vec::new();
 
-        let ignore_path = env::args()
-            .skip(1)
-            .find(|string| {
-                string.starts_with("--b")
-            });
+        // let ignore_path = env::args()
+        //     .skip(1)
+        //     .find(|string| {
+        //         string.starts_with("--b")
+        //     });
 
         // if let Ok(mut file) = File::open(ignore_path) {
         //     let mut contents = String::new();
@@ -54,10 +55,10 @@ impl Data {
         // }
 
 
-        Data {
+        Ok(Data {
             root_path,
             ignores,
-        }
+        })
     }
 }
 
