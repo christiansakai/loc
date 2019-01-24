@@ -1,6 +1,6 @@
 # loc
 
-A CLI tool to count lines of code written in Rust.
+A CLI tool to count lines of code written in Rust. Still very crude and the paths are not well thought out. A toy project written to learn Rust.
 
 ## Quick Start
 

@@ -16,6 +16,8 @@ fn main() {
         Ok(data) => {
             let file_paths = data.depth_first_search_file();
 
+            println!("{:?}", data);
+
             let total_loc = file_paths.iter()
                 .fold(0, |acc, file_path| {
                     if let Ok(count) = count_loc(file_path) {
@@ -30,6 +32,7 @@ fn main() {
     }
 }
 
+#[derive(Debug)]
 struct Data {
     root_path: String,
     ignores: HashSet<String>
