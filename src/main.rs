@@ -1,10 +1,10 @@
 use std::env;
-use std::env::Args;
 use std::io;
 use std::io::Read;
 use std::fs::File;
 use std::path::Path;
 use std::collections::VecDeque;
+use std::collections::HashSet;
 
 fn main() {
     let data = Data::new();
@@ -15,6 +15,7 @@ fn main() {
         },
         Ok(data) => {
             let file_paths = data.depth_first_search_file();
+
             let total_loc = file_paths.iter()
                 .fold(0, |acc, file_path| {
                     if let Ok(count) = count_loc(file_path) {
@@ -27,12 +28,11 @@ fn main() {
             println!("Total Lines of Code {:?}", total_loc);
         }
     }
-
 }
 
 struct Data {
     root_path: String,
-    ignores: Vec<String>
+    ignores: HashSet<String>
 }
 
 impl Data {
@@ -40,7 +40,7 @@ impl Data {
         let root_path = env::args()
             .skip(1)
             .find(|string| {
-                !string.starts_with("--b")
+                !string.starts_with("--i")
             });
 
         match root_path {
@@ -49,12 +49,18 @@ impl Data {
                 let ignore_path = env::args()
                     .skip(1)
                     .find(|string| {
-                        string.starts_with("--b")
+                        string.starts_with("--i")
                     });
 
-                let mut ignores = Vec::new();
+                let mut ignores = HashSet::new();
 
                 if let Some(ignore_path) = ignore_path {
+                    let ignore = ignore_path.split("=")
+                        .skip(1)
+                        .collect::<Vec<&str>>();
+
+                    let ignore_path = ignore[0];
+
                     if let Ok(mut file) = File::open(&ignore_path) {
                         let mut contents = String::new();
                         if let Ok(_) = file.read_to_string(&mut contents) {
@@ -63,11 +69,10 @@ impl Data {
                                 .split('\n');
 
                             for content in contents {
-                                ignores.push(content.to_owned());
+                                ignores.insert(content.to_owned());
                             }
                         }
                     }
-
                 }
 
                 Ok(Data {
@@ -86,30 +91,22 @@ impl Data {
         while !deque.is_empty() {
             let path_opt = deque.pop_front();
 
-            // let x = self.ignores.iter().find(|string| {
-            //     string == path_opt
-            // });
-
-            // let root_path = env::args()
-            //     .skip(1)
-            //     .find(|string| {
-            //         !string.starts_with("--b")
-            //     });
-
             if let Some(path_str) = path_opt {
-                let path = Path::new(&path_str);
-                if path.is_dir() {
-                    for entry in path.read_dir().expect("read_dir call failed") {
-                        if let Ok(entry) = entry {
-                            if let Some(path_str) = entry.path().to_str() {
-                                let path_str = String::from(path_str);
-                                deque.push_front(path_str);
+                if let None = self.ignores.get(&path_str) {
+                    let path = Path::new(&path_str);
+                    if path.is_dir() {
+                        for entry in path.read_dir().expect("read_dir call failed") {
+                            if let Ok(entry) = entry {
+                                if let Some(path_str) = entry.path().to_str() {
+                                    let path_str = String::from(path_str);
+                                    deque.push_front(path_str);
+                                }
                             }
                         }
-                    }
 
-                } else if path.is_file() {
-                    file_paths.push(path_str.clone());
+                    } else if path.is_file() {
+                        file_paths.push(path_str.clone());
+                    }
                 }
             }
         }
